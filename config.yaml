@@ -1,0 +1,51 @@
+# ============================================================
+#  OEE Dashboard — Configuration
+# ============================================================
+
+production:
+  planned_shift_hours: 8.0          # hours per shift
+  breaks_per_shift: 2               # scheduled breaks
+  break_duration_min: 15            # minutes per break
+  ideal_cycle_time_sec: 45          # seconds per part (takt time)
+  shifts_per_day: 3
+
+machines:
+  - id: "M01"
+    name: "Assembly Station 1"
+    product: "Body Frame"
+  - id: "M02"
+    name: "Assembly Station 2"
+    product: "Door Panel"
+  - id: "M03"
+    name: "Welding Robot A"
+    product: "Chassis"
+  - id: "M04"
+    name: "Paint Line"
+    product: "Exterior"
+
+simulator:
+  random_seed: 42
+  # Failure rates (events per shift)
+  breakdown_rate: 1.4
+  minor_stop_rate: 6.0
+  setup_rate: 0.8
+  # Durations (minutes)
+  breakdown_mean_min: 22
+  breakdown_std_min:  12
+  minor_stop_mean_min: 2.5
+  setup_mean_min: 18
+  # Quality
+  scrap_rate: 0.076           # fraction of total parts
+  rework_rate: 0.023
+
+oee:
+  world_class_threshold: 0.85
+  good_threshold: 0.75
+  poor_threshold: 0.60
+
+pareto:
+  top_n: 5                     # top causes to highlight
+
+dashboard:
+  port: 8501
+  refresh_interval_sec: 5
