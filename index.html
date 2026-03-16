@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OEE Dashboard — Lean Manufacturing Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:ital,wght@0,300;0,400;0,500;1,300&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b1320;
+  --bg2:#101c30;
+  --bg3:#162540;
+  --bg4:#1c2e50;
+  --ink:#e2eaf8;
+  --ink2:#8fa8cc;
+  --ink3:#4d6a8f;
+  --ink4:#2d4060;
+  --blue:#3b82f6;
+  --blue-l:#60a5fa;
+  --blue-bg:rgba(59,130,246,.1);
+  --green:#22c55e;
+  --green-l:#4ade80;
+  --amber:#f59e0b;
+  --red:#ef4444;
+  --border:#1e3a5f;
+  --border2:#253d62;
+  --mono:'Share Tech Mono',monospace;
+  --cond:'Barlow Condensed',sans-serif;
+  --body:'Barlow',sans-serif;
+  --grid-color:rgba(59,130,246,.06);
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.65;
+  overflow-x:hidden;
+}
+
+/* ── Blueprint grid overlay ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-color) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+}
+body>*{position:relative;z-index:1}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;
+  background:rgba(11,19,32,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  font-family:var(--mono);font-size:.85rem;
+  color:var(--blue-l);letter-spacing:.06em;
+  display:flex;align-items:center;gap:.5rem;
+}
+.nav-logo::before{
+  content:'';width:8px;height:8px;
+  background:var(--green);border-radius:50%;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-family:var(--mono);font-size:.7rem;color:var(--ink3);
+  text-decoration:none;text-transform:uppercase;letter-spacing:.1em;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--blue-l)}
+.nav-badge{
+  font-family:var(--mono);font-size:.68rem;
+  padding:.3rem .9rem;border:1px solid var(--blue);
+  color:var(--blue-l);text-decoration:none;
+  transition:all .2s;letter-spacing:.05em;
+}
+.nav-badge:hover{background:var(--blue);color:#fff}
+
+/* ── HERO ── */
+#hero{
+  min-height:100vh;display:grid;
+  grid-template-columns:1.1fr 1fr;
+  border-bottom:1px solid var(--border);
+}
+.hero-left{
+  padding:6rem 3rem 5rem 4rem;
+  display:flex;flex-direction:column;justify-content:center;
+  border-right:1px solid var(--border);
+}
+.hero-badge{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;
+  color:var(--green);display:flex;align-items:center;gap:.6rem;
+  margin-bottom:2rem;
+}
+.hero-badge::before{content:'▶';font-size:.55rem}
+h1{
+  font-family:var(--cond);font-size:clamp(3rem,6vw,6rem);
+  font-weight:800;line-height:.95;letter-spacing:-.01em;
+  margin-bottom:1.5rem;text-transform:uppercase;
+}
+h1 span{
+  display:block;color:transparent;
+  -webkit-text-stroke:1px var(--blue-l);
+}
+.hero-sub{
+  font-size:1rem;color:var(--ink2);max-width:440px;
+  line-height:1.75;margin-bottom:2.5rem;font-weight:300;
+}
+.hero-ctas{display:flex;gap:1rem;flex-wrap:wrap}
+.btn{
+  font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;
+  padding:.7rem 1.6rem;text-decoration:none;transition:all .2s;
+  display:inline-flex;align-items:center;gap:.5rem;
+}
+.btn-primary{background:var(--blue);color:#fff;border:1px solid var(--blue)}
+.btn-primary:hover{background:var(--blue-l);border-color:var(--blue-l)}
+.btn-ghost{border:1px solid var(--border2);color:var(--ink2)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue-l)}
+
+/* Hero right — OEE display panel */
+.hero-right{padding:3rem;display:flex;flex-direction:column;gap:1px;background:var(--border)}
+.panel{background:var(--bg2);padding:1.5rem}
+.panel-header{
+  font-family:var(--mono);font-size:.62rem;color:var(--ink3);
+  letter-spacing:.12em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);padding-bottom:.5rem;margin-bottom:1rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.panel-status{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.6rem;color:var(--green);
+}
+.panel-status::before{content:'●';font-size:.5rem}
+
+/* OEE gauge (CSS) */
+.oee-gauge{
+  display:flex;flex-direction:column;align-items:center;
+  padding:1rem 0;
+}
+.gauge-ring{
+  width:120px;height:120px;border-radius:50%;
+  background:conic-gradient(
+    var(--amber) 0deg,
+    var(--amber) calc(var(--oee, 0.714) * 360deg),
+    var(--border) calc(var(--oee, 0.714) * 360deg)
+  );
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.gauge-ring::before{
+  content:'';position:absolute;
+  width:90px;height:90px;border-radius:50%;
+  background:var(--bg2);
+}
+.gauge-value{
+  position:relative;z-index:1;
+  font-family:var(--cond);font-size:1.8rem;font-weight:700;
+  color:var(--amber);
+}
+.gauge-label{
+  font-family:var(--mono);font-size:.62rem;color:var(--ink3);
+  letter-spacing:.1em;margin-top:.5rem;
+}
+/* APQ row */
+.apq-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);margin-top:1px}
+.apq-cell{background:var(--bg3);padding:.8rem;text-align:center}
+.apq-label{font-family:var(--mono);font-size:.58rem;color:var(--ink3);letter-spacing:.08em;margin-bottom:.2rem}
+.apq-val{font-family:var(--cond);font-size:1.3rem;font-weight:600;line-height:1}
+.apq-bar{height:3px;background:var(--border);border-radius:2px;margin-top:.4rem;overflow:hidden}
+.apq-bar-fill{height:100%;border-radius:2px;transition:width 1.5s ease}
+
+/* 6 losses mini-table */
+.losses-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.65rem}
+.losses-table td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}
+.losses-table tr:last-child td{border-bottom:none}
+.loss-bar-cell{width:60%;padding-right:.5rem}
+.loss-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.loss-bar-fill{height:100%;border-radius:2px}
+.lf-1{background:var(--red)}
+.lf-2{background:#f97316}
+.lf-3{background:#eab308}
+.lf-4{background:#84cc16}
+.lf-5{background:#06b6d4}
+.lf-6{background:#8b5cf6}
+
+/* ── SECTIONS ── */
+section{padding:6rem 2.5rem}
+.container{max-width:1100px;margin:0 auto}
+.section-eyebrow{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;
+  color:var(--blue-l);text-transform:uppercase;
+  display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;
+}
+.section-eyebrow::before{content:'//';color:var(--ink4)}
+h2{
+  font-family:var(--cond);font-size:clamp(2rem,4vw,3.2rem);
+  font-weight:700;line-height:1.05;letter-spacing:.01em;
+  text-transform:uppercase;margin-bottom:1rem;
+}
+.text-dim{color:var(--ink2)}
+hr.divider{border:none;border-top:1px solid var(--border);margin:0}
+
+/* ── OEE FORMULA ── */
+#formula{background:var(--bg2);border-bottom:1px solid var(--border)}
+.formula-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;margin-top:3rem;align-items:start}
+.formula-block{
+  background:var(--bg3);border:1px solid var(--border);
+  padding:2rem;font-family:var(--mono);font-size:.82rem;
+  color:var(--ink2);line-height:2.1;
+}
+.formula-block .hl{color:var(--amber)}
+.formula-block .hl2{color:var(--green)}
+.formula-block .hl3{color:var(--blue-l)}
+.formula-block .comment{color:var(--ink4);font-size:.7rem}
+.big-oee{
+  font-family:var(--cond);font-size:5rem;font-weight:800;
+  color:transparent;-webkit-text-stroke:1px var(--amber);
+  line-height:1;margin-bottom:.5rem;
+}
+.formula-desc p{color:var(--ink2);font-weight:300;margin-bottom:.8rem;line-height:1.8}
+
+/* ── 6 BIG LOSSES ── */
+#losses{background:var(--bg);border-bottom:1px solid var(--border)}
+.losses-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:3rem;border:1px solid var(--border)}
+.loss-card{background:var(--bg2);padding:1.5rem;transition:background .2s}
+.loss-card:hover{background:var(--bg3)}
+.loss-category{
+  font-family:var(--mono);font-size:.6rem;color:var(--ink4);
+  letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;
+}
+.loss-num{
+  font-family:var(--cond);font-size:2.5rem;font-weight:700;
+  color:transparent;-webkit-text-stroke:1px;line-height:1;margin-bottom:.3rem;
+}
+.loss-n1,.loss-n2{-webkit-text-stroke-color:var(--red)}
+.loss-n3,.loss-n4{-webkit-text-stroke-color:var(--amber)}
+.loss-n5,.loss-n6{-webkit-text-stroke-color:var(--blue-l)}
+.loss-name{font-family:var(--cond);font-size:1rem;font-weight:600;margin-bottom:.4rem;text-transform:uppercase}
+.loss-desc{font-size:.8rem;color:var(--ink3);line-height:1.6}
+.loss-impact{
+  margin-top:.8rem;display:inline-block;
+  font-family:var(--mono);font-size:.6rem;padding:.2rem .6rem;
+  border:1px solid;letter-spacing:.05em;
+}
+.impact-avail{color:var(--red);border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.06)}
+.impact-perf{color:var(--amber);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.impact-qual{color:var(--blue-l);border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06)}
+
+/* ── PARETO ── */
+#pareto{background:var(--bg2);border-bottom:1px solid var(--border)}
+.pareto-container{margin-top:3rem}
+.pareto-bars{display:flex;flex-direction:column;gap:.4rem}
+.pareto-row{display:flex;align-items:center;gap:1rem;font-family:var(--mono);font-size:.72rem}
+.pareto-label{width:180px;flex-shrink:0;color:var(--ink2);text-align:right}
+.pareto-track{flex:1;height:28px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;position:relative}
+.pareto-fill{height:100%;display:flex;align-items:center;padding-left:.5rem;font-size:.65rem;color:#fff;font-weight:500;transition:width 1.5s ease;white-space:nowrap}
+.pareto-class{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.65rem;font-weight:600;border:1px solid;flex-shrink:0;
+}
+.class-a{color:var(--red);border-color:var(--red);background:rgba(239,68,68,.08)}
+.class-b{color:var(--amber);border-color:var(--amber);background:rgba(245,158,11,.08)}
+.class-c{color:var(--blue-l);border-color:var(--blue-l);background:rgba(96,165,250,.08)}
+
+/* ── METRICS ── */
+#metrics{background:var(--bg);border-bottom:1px solid var(--border)}
+.metrics-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--border);
+  margin-top:3rem;border:1px solid var(--border);
+}
+.metric-tile{background:var(--bg2);padding:1.5rem 1.2rem}
+.metric-tile h4{
+  font-family:var(--mono);font-size:.62rem;color:var(--ink4);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;
+}
+.metric-tile .val{
+  font-family:var(--cond);font-size:2rem;font-weight:700;
+  color:var(--ink);line-height:1;margin-bottom:.3rem;
+}
+.metric-tile .formula{
+  font-family:var(--mono);font-size:.68rem;color:var(--blue-l);
+  background:var(--blue-bg);padding:.3rem .6rem;display:inline-block;margin-top:.5rem;
+}
+.metric-tile p{font-size:.78rem;color:var(--ink3);margin-top:.4rem;line-height:1.5}
+
+/* ── ARCHITECTURE ── */
+#architecture{background:var(--bg2);border-bottom:1px solid var(--border)}
+.arch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:3rem;border:1px solid var(--border)}
+.arch-module{
+  border-right:1px solid var(--border);padding:1.5rem 1.2rem;
+  transition:background .2s;
+}
+.arch-module:last-child{border-right:none}
+.arch-module:hover{background:var(--bg3)}
+.arch-icon{
+  font-family:var(--mono);font-size:.65rem;
+  color:var(--blue-l);letter-spacing:.08em;margin-bottom:.6rem;
+}
+.arch-title{font-family:var(--cond);font-size:1rem;font-weight:600;text-transform:uppercase;margin-bottom:.3rem}
+.arch-file{
+  font-family:var(--mono);font-size:.6rem;color:var(--green);
+  background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);
+  padding:.2rem .5rem;margin-bottom:.6rem;display:inline-block;
+}
+.arch-desc{font-size:.75rem;color:var(--ink3);line-height:1.6}
+
+/* ── QUICKSTART ── */
+#quickstart{background:var(--bg);border-bottom:1px solid var(--border)}
+.qs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.qs-card{background:var(--bg2);border:1px solid var(--border);padding:1.5rem}
+.qs-num{font-family:var(--mono);font-size:.6rem;color:var(--blue-l);letter-spacing:.1em;margin-bottom:.8rem}
+.qs-card h3{font-family:var(--cond);font-size:1.1rem;font-weight:600;text-transform:uppercase;margin-bottom:.8rem}
+pre{
+  background:var(--bg3);border:1px solid var(--border);
+  padding:1rem;overflow-x:auto;
+  font-family:var(--mono);font-size:.72rem;
+  color:var(--ink2);line-height:1.7;
+}
+pre .g{color:#4ade80}pre .y{color:#fcd34d}pre .b{color:#93c5fd}pre .c{color:var(--ink4)}
+
+/* ── AUTHOR ── */
+#author{background:var(--bg2);border-bottom:1px solid var(--border)}
+.author-wrap{display:grid;grid-template-columns:1fr 1.8fr;gap:4rem;margin-top:3rem;align-items:start}
+.author-mono{
+  font-family:var(--mono);font-size:.72rem;color:var(--ink2);
+  line-height:2;background:var(--bg3);border:1px solid var(--border);padding:1.5rem;
+}
+.author-mono .key{color:var(--blue-l)}
+.author-mono .val{color:var(--green)}
+.author-links{display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem}
+.author-link{
+  font-family:var(--mono);font-size:.7rem;padding:.45rem 1rem;
+  border:1px solid var(--border2);color:var(--ink2);text-decoration:none;
+  transition:all .2s;display:inline-flex;align-items:center;gap:.4rem;width:fit-content;
+}
+.author-link:hover{border-color:var(--blue-l);color:var(--blue-l)}
+.author-bio p{color:var(--ink2);font-weight:300;margin-bottom:.8rem;line-height:1.8}
+.stellantis-badge{
+  margin-top:1.2rem;padding:.8rem 1.2rem;
+  background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.25);
+  font-family:var(--mono);font-size:.72rem;color:var(--blue-l);
+  display:flex;gap:.8rem;align-items:flex-start;
+}
+.hackathon-badge{
+  margin-top:.8rem;padding:.8rem 1.2rem;
+  background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);
+  font-family:var(--mono);font-size:.72rem;color:var(--amber);
+  display:flex;gap:.8rem;align-items:flex-start;
+}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--bg3);border-top:1px solid var(--border);
+  padding:1.5rem 2.5rem;font-family:var(--mono);font-size:.68rem;
+  color:var(--ink4);display:flex;justify-content:space-between;align-items:center;
+}
+footer a{color:var(--ink3);text-decoration:none;transition:color .2s}
+footer a:hover{color:var(--blue-l)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:900px){
+  #hero{grid-template-columns:1fr}.hero-right{display:none}
+  .formula-grid,.arch-grid,.losses-grid,.metrics-strip{grid-template-columns:1fr}
+  .qs-grid,.author-wrap{grid-template-columns:1fr}
+  nav{padding:0 1rem}.nav-links{display:none}
+  section{padding:4rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">OEE-DASHBOARD</div>
+  <ul class="nav-links">
+    <li><a href="#formula">Formula</a></li>
+    <li><a href="#losses">6 Big Losses</a></li>
+    <li><a href="#pareto">Pareto</a></li>
+    <li><a href="#metrics">Metrics</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#quickstart">Quickstart</a></li>
+  </ul>
+  <a href="https://github.com/alaaeddinethr/oee-dashboard" target="_blank" class="nav-badge">GitHub ↗</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-badge">Lean Manufacturing · Industry 4.0 · TPM</div>
+    <h1>OEE<br><span>Dashboard</span></h1>
+    <p class="hero-sub">
+      Production line efficiency analytics — Overall Equipment Effectiveness,
+      6 Big Losses decomposition, Pareto analysis, and real-time monitoring.
+      Built from hands-on industrial experience.
+    </p>
+    <div class="hero-ctas">
+      <a href="https://github.com/alaaeddinethr/oee-dashboard" class="btn btn-primary" target="_blank">⬡ View on GitHub</a>
+      <a href="#losses" class="btn btn-ghost">Explore the Model →</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="panel" style="flex:0.8">
+      <div class="panel-header">
+        PRODUCTION STATUS
+        <div class="panel-status">LIVE SIM</div>
+      </div>
+      <div style="display:flex;justify-content:center">
+        <div class="oee-gauge" style="--oee:0.714">
+          <div class="gauge-ring">
+            <div class="gauge-value">71.4</div>
+          </div>
+          <div class="gauge-label">OVERALL OEE %</div>
+        </div>
+      </div>
+    </div>
+    <div class="apq-row">
+      <div class="apq-cell">
+        <div class="apq-label">Availability</div>
+        <div class="apq-val" style="color:#3b82f6">87.2%</div>
+        <div class="apq-bar"><div class="apq-bar-fill" style="width:87.2%;background:#3b82f6"></div></div>
+      </div>
+      <div class="apq-cell">
+        <div class="apq-label">Performance</div>
+        <div class="apq-val" style="color:#22c55e">88.6%</div>
+        <div class="apq-bar"><div class="apq-bar-fill" style="width:88.6%;background:#22c55e"></div></div>
+      </div>
+      <div class="apq-cell">
+        <div class="apq-label">Quality</div>
+        <div class="apq-val" style="color:#f59e0b">92.4%</div>
+        <div class="apq-bar"><div class="apq-bar-fill" style="width:92.4%;background:#f59e0b"></div></div>
+      </div>
+    </div>
+    <div class="panel" style="flex:1">
+      <div class="panel-header">6 BIG LOSSES — SHIFT BREAKDOWN</div>
+      <table class="losses-table">
+        <tr>
+          <td style="color:var(--ink2)">Equipment Failure</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-1" style="width:82%"></div></div></td>
+          <td style="color:var(--red)">38.2%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--ink2)">Idling & Minor Stops</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-3" style="width:55%"></div></div></td>
+          <td style="color:#eab308">24.1%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--ink2)">Process Defects</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-5" style="width:38%"></div></div></td>
+          <td style="color:#06b6d4">17.4%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--ink2)">Setup & Adjustment</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-2" style="width:26%"></div></div></td>
+          <td style="color:#f97316">11.8%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--ink2)">Reduced Speed</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-4" style="width:15%"></div></div></td>
+          <td style="color:#84cc16">6.8%</td>
+        </tr>
+        <tr>
+          <td style="color:var(--ink2)">Reduced Yield</td>
+          <td class="loss-bar-cell"><div class="loss-bar"><div class="loss-bar-fill lf-6" style="width:5%"></div></div></td>
+          <td style="color:#8b5cf6">1.7%</td>
+        </tr>
+      </table>
+    </div>
+    <div class="panel" style="flex:0.5;display:flex;gap:2rem;justify-content:space-around;align-items:center">
+      <div style="text-align:center;font-family:var(--mono)">
+        <div style="font-size:.58rem;color:var(--ink4);letter-spacing:.1em;margin-bottom:.2rem">MTBF</div>
+        <div style="font-size:1.5rem;font-weight:600;color:var(--blue-l)">4.2h</div>
+      </div>
+      <div style="text-align:center;font-family:var(--mono)">
+        <div style="font-size:.58rem;color:var(--ink4);letter-spacing:.1em;margin-bottom:.2rem">MTTR</div>
+        <div style="font-size:1.5rem;font-weight:600;color:var(--amber)">22m</div>
+      </div>
+      <div style="text-align:center;font-family:var(--mono)">
+        <div style="font-size:.58rem;color:var(--ink4);letter-spacing:.1em;margin-bottom:.2rem">SCRAP</div>
+        <div style="font-size:1.5rem;font-weight:600;color:var(--red)">7.6%</div>
+      </div>
+      <div style="text-align:center;font-family:var(--mono)">
+        <div style="font-size:.58rem;color:var(--ink4);letter-spacing:.1em;margin-bottom:.2rem">GAP TO WC</div>
+        <div style="font-size:1.5rem;font-weight:600;color:var(--green)">13.6pp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- OEE FORMULA -->
+<section id="formula">
+  <div class="container">
+    <div class="section-eyebrow">The Model</div>
+    <h2>OEE = A × P × Q</h2>
+    <div class="formula-grid reveal">
+      <div>
+        <div class="big-oee">85%</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--amber);margin-bottom:1.2rem">WORLD-CLASS BENCHMARK</div>
+        <div class="formula-desc">
+          <p>OEE (Overall Equipment Effectiveness) is the gold standard KPI for measuring manufacturing productivity. It answers one question: of all the time a machine <em>could</em> have been making good parts at full speed, what fraction actually was?</p>
+          <p>Most plants operate between 40–60%. The gap to world class (85%) represents recoverable capacity — no new investment required, just eliminating the 6 Big Losses systematically.</p>
+        </div>
+      </div>
+      <div class="formula-block reveal">
+        <span class="hl">OEE</span> = <span class="hl2">A</span> × <span class="hl3">P</span> × <span class="hl">Q</span><br>
+        <span class="comment">// All three must be high — one bad component tanks OEE</span><br><br>
+        <span class="hl2">Availability</span> = Run_Time / Planned_Time<br>
+        <span class="comment">// Penalizes unplanned stops and setups</span><br><br>
+        <span class="hl3">Performance</span> = (Ideal_CT × Count) / Run_Time<br>
+        <span class="comment">// Penalizes minor stops and slow running</span><br><br>
+        <span class="hl">Quality</span> = Good_Count / Total_Count<br>
+        <span class="comment">// Penalizes scrap, rework, startup losses</span><br><br>
+        <span class="comment">// MTBF = (Available_Time − Σ Breakdown_Duration) / n_failures</span><br>
+        <span class="comment">// MTTR = Σ Breakdown_Duration / n_failures</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 6 BIG LOSSES -->
+<section id="losses">
+  <div class="container">
+    <div class="section-eyebrow">TPM Framework</div>
+    <h2>The 6 Big Losses</h2>
+    <p class="text-dim" style="margin-bottom:.5rem">Every OEE loss maps to one of these six categories — the universal language of Lean manufacturing.</p>
+    <div class="losses-grid reveal">
+      <div class="loss-card">
+        <div class="loss-category">Availability Loss</div>
+        <div class="loss-num loss-n1">01</div>
+        <div class="loss-name">Equipment Failure</div>
+        <div class="loss-desc">Unplanned breakdowns — the machine stops unexpectedly. Largest source of lost time in most plants.</div>
+        <span class="loss-impact impact-avail">↓ Availability</span>
+      </div>
+      <div class="loss-card">
+        <div class="loss-category">Availability Loss</div>
+        <div class="loss-num loss-n2">02</div>
+        <div class="loss-name">Setup & Adjustment</div>
+        <div class="loss-desc">Planned changeovers, tool changes, product transitions. Reducible via SMED (Single Minute Exchange of Die).</div>
+        <span class="loss-impact impact-avail">↓ Availability</span>
+      </div>
+      <div class="loss-card">
+        <div class="loss-category">Performance Loss</div>
+        <div class="loss-num loss-n3">03</div>
+        <div class="loss-name">Idling & Minor Stops</div>
+        <div class="loss-desc">Short stoppages under 5 minutes — jams, sensor faults, material shortages. High frequency, hard to track manually.</div>
+        <span class="loss-impact impact-perf">↓ Performance</span>
+      </div>
+      <div class="loss-card">
+        <div class="loss-category">Performance Loss</div>
+        <div class="loss-num loss-n4">04</div>
+        <div class="loss-name">Reduced Speed</div>
+        <div class="loss-desc">Machine running below design speed. Often hidden — operators slow down to avoid defects or manage wear.</div>
+        <span class="loss-impact impact-perf">↓ Performance</span>
+      </div>
+      <div class="loss-card">
+        <div class="loss-category">Quality Loss</div>
+        <div class="loss-num loss-n5">05</div>
+        <div class="loss-name">Process Defects</div>
+        <div class="loss-desc">Scrap and rework produced during steady-state production. Each bad part = one takt time wasted.</div>
+        <span class="loss-impact impact-qual">↓ Quality</span>
+      </div>
+      <div class="loss-card">
+        <div class="loss-category">Quality Loss</div>
+        <div class="loss-num loss-n6">06</div>
+        <div class="loss-name">Reduced Yield</div>
+        <div class="loss-desc">Startup losses — defects produced during warmup, stabilization, or after changeover before process is stable.</div>
+        <span class="loss-impact impact-qual">↓ Quality</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PARETO -->
+<section id="pareto">
+  <div class="container">
+    <div class="section-eyebrow">80/20 Rule</div>
+    <h2>Pareto Analysis</h2>
+    <p class="text-dim" style="margin-bottom:2rem">~80% of production losses come from ~20% of causes. Fix the A-class items first.</p>
+    <div class="pareto-container reveal">
+      <div class="pareto-bars">
+        <div class="pareto-row">
+          <div class="pareto-label">Equipment Failure</div>
+          <div class="pareto-track"><div class="pareto-fill lf-1" style="width:82%">38.2% · 52 occ. · avg 22min</div></div>
+          <div class="pareto-class class-a">A</div>
+        </div>
+        <div class="pareto-row">
+          <div class="pareto-label">Idling & Minor Stops</div>
+          <div class="pareto-track"><div class="pareto-fill lf-3" style="width:56%">24.1% · 148 occ. · avg 2.5min</div></div>
+          <div class="pareto-class class-a">A</div>
+        </div>
+        <div class="pareto-row">
+          <div class="pareto-label">Process Defects</div>
+          <div class="pareto-track"><div class="pareto-fill lf-5" style="width:38%">17.4% · quality time lost</div></div>
+          <div class="pareto-class class-b">B</div>
+        </div>
+        <div class="pareto-row">
+          <div class="pareto-label">Setup & Adjustment</div>
+          <div class="pareto-track"><div class="pareto-fill lf-2" style="width:26%">11.8% · 18 setups · avg 18min</div></div>
+          <div class="pareto-class class-b">B</div>
+        </div>
+        <div class="pareto-row">
+          <div class="pareto-label">Reduced Speed</div>
+          <div class="pareto-track"><div class="pareto-fill lf-4" style="width:15%">6.8% · speed loss</div></div>
+          <div class="pareto-class class-c">C</div>
+        </div>
+        <div class="pareto-row">
+          <div class="pareto-label">Reduced Yield</div>
+          <div class="pareto-track"><div class="pareto-fill lf-6" style="width:5%">1.7% · startup waste</div></div>
+          <div class="pareto-class class-c">C</div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;display:flex;gap:1.5rem;font-family:var(--mono);font-size:.7rem">
+        <span><span class="pareto-class class-a" style="display:inline-flex;width:20px;height:20px">A</span> Critical — address immediately (top 80% of losses)</span>
+        <span><span class="pareto-class class-b" style="display:inline-flex;width:20px;height:20px">B</span> Important — plan for next sprint</span>
+        <span><span class="pareto-class class-c" style="display:inline-flex;width:20px;height:20px">C</span> Monitor — low priority</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- METRICS -->
+<section id="metrics">
+  <div class="container">
+    <div class="section-eyebrow">KPI Library</div>
+    <h2>Every metric computed</h2>
+    <div class="metrics-strip reveal">
+      <div class="metric-tile">
+        <h4>MTBF</h4>
+        <div class="val">4.2h</div>
+        <div class="formula">= run_time / n_failures</div>
+        <p>Mean Time Between Failures — average operating time between two consecutive breakdowns. Higher is better.</p>
+      </div>
+      <div class="metric-tile">
+        <h4>MTTR</h4>
+        <div class="val">22 min</div>
+        <div class="formula">= Σ repair_time / n_failures</div>
+        <p>Mean Time To Repair — average duration to restore operation after a breakdown. Target: ↓ via standardized maintenance procedures.</p>
+      </div>
+      <div class="metric-tile">
+        <h4>Scrap Rate</h4>
+        <div class="val">7.6%</div>
+        <div class="formula">= scrap / total_parts</div>
+        <p>Fraction of non-conforming parts in total production. Directly impacts Quality component and material cost.</p>
+      </div>
+      <div class="metric-tile">
+        <h4>Takt Time</h4>
+        <div class="val">45 s</div>
+        <div class="formula">= available_time / demand</div>
+        <p>Ideal cycle time — the heartbeat of the production line. Performance is measured against this theoretical optimum.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-eyebrow">Codebase</div>
+    <h2>5-module architecture</h2>
+    <div class="arch-grid reveal">
+      <div class="arch-module">
+        <div class="arch-icon">[ DATA ]</div>
+        <div class="arch-title">Simulator</div>
+        <div class="arch-file">simulator.py</div>
+        <div class="arch-desc">Poisson-distributed breakdowns, log-normal durations, binomial quality. Multi-machine, multi-shift.</div>
+      </div>
+      <div class="arch-module">
+        <div class="arch-icon">[ OEE ]</div>
+        <div class="arch-title">Calculator</div>
+        <div class="arch-file">calculator.py</div>
+        <div class="arch-desc">OEE, Availability, Performance, Quality. MTBF, MTTR. Shift-level and machine-level aggregation.</div>
+      </div>
+      <div class="arch-module">
+        <div class="arch-icon">[ OEE ]</div>
+        <div class="arch-title">Losses</div>
+        <div class="arch-file">losses.py</div>
+        <div class="arch-desc">6 Big Losses decomposition. Waterfall chart data. Category totals (availability / performance / quality).</div>
+      </div>
+      <div class="arch-module">
+        <div class="arch-icon">[ LEAN ]</div>
+        <div class="arch-title">Pareto + Report</div>
+        <div class="arch-file">pareto.py · report.py</div>
+        <div class="arch-desc">ABC classification, vital few identification, trend analysis, anomaly detection (z-score flagging).</div>
+      </div>
+      <div class="arch-module">
+        <div class="arch-icon">[ UI ]</div>
+        <div class="arch-title">Dashboard</div>
+        <div class="arch-file">app.py</div>
+        <div class="arch-desc">Streamlit: live gauge, 6-loss stacked bar, Pareto chart, machine comparison, OEE trend, anomaly table.</div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;background:var(--bg3);border:1px solid var(--border);padding:1.2rem;font-family:var(--mono);font-size:.72rem;color:var(--ink3);line-height:1.9">
+      <span style="color:var(--green)">48 unit tests</span> · pytest + CI (Python 3.10 & 3.11) ·
+      Mathematical invariants: OEE = A×P×Q enforced, parts_good ≤ parts_total,
+      all rates ∈ [0,1], Pareto cumulative monotone, ABC classification exhaustive ·
+      <span style="color:var(--green)">Perfect-shift test</span>: synthetic zero-loss shift verifies OEE → 1.0 ·
+      <span style="color:var(--green)">Zero-production test</span>: pure-breakdown shift verifies OEE = 0
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- QUICKSTART -->
+<section id="quickstart">
+  <div class="container">
+    <div class="section-eyebrow">Usage</div>
+    <h2>Running in 3 commands</h2>
+    <div class="qs-grid reveal">
+      <div class="qs-card">
+        <div class="qs-num">01 — INSTALL</div>
+        <h3>Setup</h3>
+        <pre><span class="c"># Clone repo</span>
+<span class="g">git</span> clone https://github.com/
+  alaaeddinethr/oee-dashboard
+<span class="g">cd</span> oee-dashboard
+
+<span class="c"># Install</span>
+<span class="g">pip</span> install <span class="y">-r</span> requirements.txt
+
+<span class="c"># Run tests</span>
+<span class="g">pytest</span> tests/ <span class="y">-v</span></pre>
+      </div>
+      <div class="qs-card">
+        <div class="qs-num">02 — SIMULATE</div>
+        <h3>Generate data</h3>
+        <pre><span class="c"># Simulate 15 shifts, 4 machines</span>
+<span class="g">python</span> src/data/simulator.py \
+  <span class="y">--shifts</span> 15 \
+  <span class="y">--machines</span> M01 M02 M03 M04
+
+<span class="c"># Compute OEE report</span>
+<span class="g">python</span> src/oee/calculator.py \
+  <span class="y">--data</span> data/production_events.csv
+
+<span class="c"># Pareto analysis</span>
+<span class="g">python</span> -c <span class="b">"from src.lean.pareto import *"</span></pre>
+      </div>
+      <div class="qs-card">
+        <div class="qs-num">03 — DASHBOARD</div>
+        <h3>Launch</h3>
+        <pre><span class="c"># Start Streamlit</span>
+<span class="g">streamlit</span> run \
+  src/dashboard/app.py
+
+<span class="c"># Open browser</span>
+<span class="b">→ http://localhost:8501</span>
+
+<span class="c"># Configure shifts,</span>
+<span class="c"># machines, seed, then</span>
+<span class="c"># click Run Analysis</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- AUTHOR -->
+<section id="author">
+  <div class="container">
+    <div class="section-eyebrow">Author</div>
+    <h2>About this project</h2>
+    <div class="author-wrap reveal">
+      <div>
+        <div class="author-mono">
+<span class="key">name</span>:     <span class="val">Alaa Eddine TAHIR</span><br>
+<span class="key">school</span>:   <span class="val">Arts et Métiers ParisTech</span><br>
+<span class="key">campus</span>:   <span class="val">Metz &amp; Rabat</span><br>
+<span class="key">degree</span>:   <span class="val">Diplôme d'ingénieur (2027)</span><br>
+<span class="key">msc</span>:      <span class="val">Financial Engineering</span><br>
+<span class="key">language</span>: <span class="val">Python 3.11</span><br>
+<span class="key">tests</span>:    <span class="val">48 passing</span><br>
+<span class="key">ci</span>:       <span class="val">GitHub Actions</span>
+        </div>
+        <div class="author-links">
+          <a href="https://linkedin.com/in/alaaeddine-tahir" class="author-link" target="_blank">↗ LinkedIn</a>
+          <a href="https://github.com/alaaeddinethr" class="author-link" target="_blank">↗ GitHub</a>
+          <a href="https://github.com/alaaeddinethr/oee-dashboard" class="author-link" target="_blank">↗ Repository</a>
+        </div>
+      </div>
+      <div class="author-bio">
+        <p>Engineering student at Arts et Métiers ParisTech with a strong industrial background. This project translates direct shop-floor experience into a rigorous, testable analytics engine — bridging the gap between Lean theory and data engineering.</p>
+        <p>The simulation model was calibrated against real industrial parameters: Weibull-distributed breakdown inter-arrivals, log-normal repair times, and binomial quality sampling — the same stochastic models used in industrial reliability engineering.</p>
+        <div class="stellantis-badge">
+          🏭 <span><strong>Stellantis Metz — Stage Ouvrier 2024</strong><br>Assembly lines, quality, continuous improvement, HSE, Lean culture on the shop floor.</span>
+        </div>
+        <div class="hackathon-badge">
+          🥉 <span><strong>MTI Hackathon 2025 — 3rd place nationally</strong><br>See also: Bearing Fault Detection (signal processing + PINN) · Quant Risk Engine (financial engineering).</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>oee-dashboard · alaaeddinethr · MIT License · 48 tests passing</div>
+  <div style="display:flex;gap:2rem">
+    <a href="https://github.com/alaaeddinethr/oee-dashboard" target="_blank">GitHub ↗</a>
+    <a href="https://linkedin.com/in/alaaeddine-tahir" target="_blank">LinkedIn ↗</a>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, {threshold: .12});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
