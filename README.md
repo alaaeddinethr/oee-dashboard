@@ -1,145 +1,78 @@
-# 🏭 OEE Dashboard — Lean Manufacturing Analytics
+# OEE Dashboard: Lean Manufacturing Analytics
 
-<div align="center">
+Turns a production event log (breakdowns, setups, micro-stops, scrap) into the KPI every plant manager watches, **Overall Equipment Effectiveness**, then decomposes the losses with the TPM *Six Big Losses* and ranks them in a Pareto so you know where to act first.
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.35-red?style=flat-square&logo=streamlit)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![CI](https://img.shields.io/github/actions/workflow/status/alaaeddinethr/oee-dashboard/ci.yml?style=flat-square&label=CI)
+[![CI](https://github.com/alaaeddinethr/oee-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/alaaeddinethr/oee-dashboard/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-**Production line efficiency analytics — OEE computation, 6 Big Losses decomposition,
-Pareto analysis, and real-time monitoring dashboard.**
+## Why OEE
 
-[Live Demo](#) · [Documentation](#architecture) · [Quickstart](#quickstart)
+OEE = Availability × Performance × Quality. It answers one question: out of the time a machine was planned to produce, how much produced good parts at full speed? 85 % is the usual world-class reference. The gap is capacity a plant can recover without buying a single machine, and the loss breakdown tells you whether to work on maintenance, changeovers, micro-stops or scrap.
 
-</div>
+## Results on a simulated line
 
----
+4 machines, 15 shifts (3 shifts a day for 5 days), 45 s ideal cycle time, 450 min of net planned time per shift. Reproduce with `python scripts/make_readme_figures.py`.
 
-## 📌 Context & Motivation
-
-Overall Equipment Effectiveness (OEE) is the gold standard KPI for measuring
-manufacturing productivity. An OEE of 100% means perfect production: only good
-parts, as fast as possible, with no downtime.
-
-World-class OEE is considered **85%**. Most plants operate between 40–60%.
-The gap represents recoverable capacity — without buying a single new machine.
-
-This project implements a complete OEE analytics pipeline:
-1. Realistic production event simulation (or live CSV import)
-2. OEE computation with full loss decomposition
-3. 6 Big Losses analysis with Pareto prioritization
-4. Interactive real-time monitoring dashboard
-5. Shift/machine/product comparison reports
-
-> Inspired by hands-on experience during an industrial internship at **Stellantis Metz**
-> (assembly line, quality, continuous improvement, 2024).
-
----
-
-## 📐 OEE Formula
-
-```
-OEE = Availability × Performance × Quality
-
-Availability = Run Time / Planned Production Time
-Performance  = (Ideal Cycle Time × Total Count) / Run Time
-Quality      = Good Count / Total Count
-```
-
-### The 6 Big Losses (Lean / TPM Framework)
-
-| Category | Loss | Description |
-|----------|------|-------------|
-| **Availability** | Equipment Failure | Unplanned breakdowns |
-| **Availability** | Setup & Adjustment | Planned changeovers, tool changes |
-| **Performance** | Idling & Minor Stops | Jams, sensor faults (< 5 min) |
-| **Performance** | Reduced Speed | Running below ideal cycle time |
-| **Quality** | Process Defects | Scrap during steady-state production |
-| **Quality** | Reduced Yield | Startup scrap / warm-up losses |
-
----
-
-## 🏗️ Architecture
-
-```
-oee-dashboard/
-│
-├── src/
-│   ├── data/
-│   │   └── simulator.py           # Realistic production event generator
-│   │
-│   ├── oee/
-│   │   ├── calculator.py          # OEE, Availability, Performance, Quality
-│   │   └── losses.py              # 6 Big Losses decomposition + MTBF/MTTR
-│   │
-│   ├── lean/
-│   │   ├── pareto.py              # Pareto analysis, 80/20 rule, priority ranking
-│   │   └── report.py              # Shift reports, machine comparison, trend analysis
-│   │
-│   └── dashboard/
-│       └── app.py                 # Streamlit interactive dashboard
-│
-├── tests/
-│   ├── test_oee.py
-│   └── test_losses_pareto.py
-│
-├── .github/workflows/ci.yml
-├── config.yaml
-└── requirements.txt
-```
-
----
-
-## 📊 Sample Results
-
-On a simulated 3-shift automotive assembly line (8h/shift, 5 days):
+![OEE by machine and Pareto of losses](assets/oee_overview.png)
 
 | Metric | Value |
-|--------|-------|
-| **OEE** | **71.4%** |
-| Availability | 87.2% |
-| Performance | 88.6% |
-| Quality | 92.4% |
-| Top Loss | Equipment Failure (38% of downtime) |
-| MTBF | 4.2 hours |
-| MTTR | 22 minutes |
-| Scrap Rate | 7.6% |
+|---|---|
+| **OEE** | **79.7 %** |
+| Availability | 88.2 % |
+| Performance | 98.1 % |
+| Quality | 92.2 % |
+| MTBF / MTTR | 302 min / 23.9 min |
+| Scrap rate | 7.8 % |
 
-*Gap to world-class (85% OEE): 13.6 points — mostly recoverable via MTTR reduction*
+**Reading it as a plant engineer would:** the line is about 5 points below world class. Equipment failures (42 % of lost time) and scrap (31 %) make up three quarters of the losses, so the first levers are maintenance (preventive plans to raise MTBF) and process quality, well before changeover time (SMED) or micro-stops.
 
----
+## How losses are classified
 
-## 🚀 Quick Start
+| OEE factor | TPM loss | Event type in the log |
+|---|---|---|
+| Availability | Equipment failure | `BREAKDOWN` |
+| Availability | Setup & adjustment | `SETUP` |
+| Performance | Idling & minor stops (< 5 min) | `MINOR_STOP` |
+| Performance | Reduced speed | `SPEED_LOSS` |
+| Quality | Process defects | scrapped parts |
+| Quality | Reduced yield (start-up) | not modelled yet (0) |
 
-```bash
-git clone https://github.com/alaaeddinethr/oee-dashboard.git
-cd oee-dashboard
-pip install -r requirements.txt
+Scheduled breaks (`BREAK`) are planned time, not a loss: they are excluded from planned production time once, and the unit tests check they are not counted twice.
 
-# Generate sample data
-python src/data/simulator.py --shifts 15 --machines 4
+## Project structure
 
-# Compute OEE report
-python src/oee/calculator.py --data data/production_events.csv
-
-# Launch dashboard
-streamlit run src/dashboard/app.py
+```
+src/
+├── data/simulator.py        # production event generator (seeded, reproducible)
+├── oee/
+│   ├── calculator.py        # availability, performance, quality, OEE, MTBF/MTTR per shift
+│   └── losses.py            # Six Big Losses decomposition
+├── lean/
+│   ├── pareto.py            # Pareto ranking, 80/20 cut-off
+│   └── report.py            # shift reports, machine comparison, trends
+└── dashboard/app.py         # Streamlit dashboard
+scripts/make_readme_figures.py
+tests/                       # 50 unit tests
 ```
 
+## Run it
+
+```bash
+pip install -r requirements.txt
+python src/data/simulator.py --shifts 15                       # writes data/production_events.csv
+python src/oee/calculator.py --data data/production_events.csv # report per shift and machine
+streamlit run src/dashboard/app.py                             # dashboard
+pytest tests
+```
+
+To analyse a real line, export your event log to a CSV with the columns `timestamp, machine_id, event_type, duration_min, parts_produced, parts_good, parts_scrap, shift, operator` and pass it to `calculator.py --data`.
+
+## References
+
+- Nakajima, S. (1988). *Introduction to TPM: Total Productive Maintenance*. Productivity Press.
+- Womack, J. P., Jones, D. T. (1996). *Lean Thinking*. Simon & Schuster.
+
 ---
 
-## 📚 References
-
-- [1] Nakajima, S. (1988). *Introduction to TPM: Total Productive Maintenance*. Productivity Press.
-- [2] Womack, J.P. & Jones, D.T. (1996). *Lean Thinking*. Simon & Schuster.
-- [3] SEMI E10 Standard — Equipment Reliability, Availability, and Maintainability.
-- [4] Rother, M. & Shook, J. (1999). *Learning to See: Value Stream Mapping*. LEI.
-
----
-
-## 👤 Author
-
-**Alaa Eddine TAHIR** — Engineering student at Arts et Métiers ParisTech
-Industrial internship at Stellantis Metz (2024) — Assembly lines, quality, continuous improvement.
-[LinkedIn](https://linkedin.com/in/alaaeddine-tahir) · [GitHub](https://github.com/alaaeddinethr)
+Alaa Eddine Tahir, engineering student at Arts et Métiers. Built after an internship on an automotive assembly line at Stellantis Metz. [LinkedIn](https://linkedin.com/in/alaaeddine-tahir)
