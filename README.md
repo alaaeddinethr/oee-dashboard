@@ -82,11 +82,7 @@ oee-dashboard/
 │
 ├── tests/
 │   ├── test_oee.py
-│   ├── test_losses.py
-│   └── test_pareto.py
-│
-├── notebooks/
-│   └── 01_OEE_Analysis.ipynb
+│   └── test_losses_pareto.py
 │
 ├── .github/workflows/ci.yml
 ├── config.yaml
