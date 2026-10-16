@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install numpy pandas scipy pytest pytest-cov ruff PyYAML
+          pip install -r requirements.txt
 
       - name: Lint with Ruff
         run: ruff check src/ tests/
@@ -46,6 +46,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11", cache: "pip"}
-      - run: pip install numpy pandas scipy PyYAML
+      - run: pip install -r requirements.txt
       - run: python src/data/simulator.py --shifts 3 --output /tmp/events.csv
       - run: python src/oee/calculator.py --data /tmp/events.csv
