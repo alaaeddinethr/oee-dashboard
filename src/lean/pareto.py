@@ -143,7 +143,7 @@ class ParetoAnalyzer:
             )
         vf = self.vital_few()
         if vf:
-            print(f"\n  ⚡ Vital Few (Class A — address these first):")
+            print("\n  ⚡ Vital Few (Class A — address these first):")
             for item in vf:
                 print(f"     → {item.cause}: {item.value:.1f} min total, "
                       f"{item.count} occurrences")

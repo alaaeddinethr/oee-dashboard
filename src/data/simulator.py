@@ -35,7 +35,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 # ─── Event types ─────────────────────────────────────────────────────────────
 
 class EventType:
@@ -151,7 +150,7 @@ class ShiftSimulator:
         total = max(0, int(actual_rate * duration_min))
 
         scrap_n = self.rng.binomial(total, self.scrap_rate)
-        rework_n = self.rng.binomial(total - scrap_n, self.rework_rate)
+        _rework_n = self.rng.binomial(total - scrap_n, self.rework_rate)  # keeps RNG stream stable
         good = total - scrap_n  # rework eventually becomes good
 
         return total, good, scrap_n

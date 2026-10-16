@@ -27,10 +27,8 @@ import argparse
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import yaml
-
 
 # ─── Event types (mirror simulator.py) ───────────────────────────────────────
 
@@ -267,7 +265,7 @@ class OEECalculator:
             print(f"  {'─'*50}")
         # Global average
         df = self.to_dataframe()
-        print(f"\n  GLOBAL AVERAGE:")
+        print("\n  GLOBAL AVERAGE:")
         print(f"  OEE:          {df['oee'].mean()*100:.1f}%")
         print(f"  Availability: {df['availability'].mean()*100:.1f}%")
         print(f"  Performance:  {df['performance'].mean()*100:.1f}%")
