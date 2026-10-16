@@ -17,18 +17,17 @@ Run:
 
 import sys
 from pathlib import Path
-import numpy as np
+
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.data.simulator import FactorySimulator
-from src.oee.calculator import OEECalculator
-from src.oee.losses import LossAnalyzer
 from src.lean.pareto import ParetoAnalyzer
 from src.lean.report import ReportEngine
+from src.oee.calculator import OEECalculator
+from src.oee.losses import LossAnalyzer
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 

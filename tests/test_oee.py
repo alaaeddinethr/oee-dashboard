@@ -1,13 +1,14 @@
 """test_oee.py — Unit tests for OEE calculator."""
 
-import numpy as np
-import pandas as pd
-import pytest
 import sys
 from pathlib import Path
+
+import pandas as pd
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.data.simulator import ShiftSimulator, FactorySimulator
+from src.data.simulator import FactorySimulator, ShiftSimulator
 from src.oee.calculator import OEECalculator, OEEResult
 
 
