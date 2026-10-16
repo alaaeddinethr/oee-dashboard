@@ -139,6 +139,47 @@ class TestOEECalculator:
         assert result.performance  >= 0.99
         assert result.quality      == 1.0
 
+    def test_breaks_are_not_counted_twice(self):
+        """Regression: scheduled breaks are already excluded from planned_shift_min.
+
+        8 h shift = 420 min at ideal speed + 30 min at 60 % speed + 30 min of
+        breaks. Net planned time is 450 min with no stops, so run time is
+        450 min and performance must show the speed loss:
+        (560 + 24) / (450 / 0.75) = 0.973. Subtracting the breaks again gave
+        a 420-min run time, a performance above 100 % clipped to 1.0, and
+        hid the speed loss entirely.
+        """
+        rows = [
+            ("PRODUCTION", 420.0, 560),
+            ("SPEED_LOSS", 30.0, 24),
+            ("BREAK", 30.0, 0),
+        ]
+        events = pd.DataFrame([{
+            "timestamp": "2024-01-15 06:00:00", "machine_id": "M01",
+            "event_type": et, "duration_min": d,
+            "parts_produced": n, "parts_good": n, "parts_scrap": 0,
+            "shift": "2024-01-15_S1", "operator": "OP001",
+        } for et, d, n in rows])
+        result = OEECalculator(events, planned_shift_min=450,
+                               ideal_cycle_time_sec=45).compute_all()[0]
+        assert result.run_time_min == pytest.approx(450.0)
+        assert result.availability == pytest.approx(1.0)
+        assert result.performance == pytest.approx(584 / 600, abs=1e-3)
+
+    def test_minor_stops_are_a_performance_loss(self):
+        """Six Big Losses: minor stops lower performance, not availability."""
+        rows = [("PRODUCTION", 420.0, 560), ("MINOR_STOP", 30.0, 0), ("BREAK", 30.0, 0)]
+        events = pd.DataFrame([{
+            "timestamp": "2024-01-15 06:00:00", "machine_id": "M01",
+            "event_type": et, "duration_min": d,
+            "parts_produced": n, "parts_good": n, "parts_scrap": 0,
+            "shift": "2024-01-15_S1", "operator": "OP001",
+        } for et, d, n in rows])
+        result = OEECalculator(events, planned_shift_min=450,
+                               ideal_cycle_time_sec=45).compute_all()[0]
+        assert result.availability == pytest.approx(1.0)
+        assert result.performance == pytest.approx(560 / 600, abs=1e-3)
+
     def test_zero_production_oee_zero(self):
         """A shift of only breakdowns should give OEE = 0."""
         zero_events = pd.DataFrame([{

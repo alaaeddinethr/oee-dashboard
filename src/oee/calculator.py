@@ -142,8 +142,13 @@ class OEECalculator:
         planned_stop_min = group.loc[group["event_type"] == "BREAK",      "duration_min"].sum()
         speed_loss_min   = group.loc[group["event_type"] == "SPEED_LOSS", "duration_min"].sum()
 
-        total_loss_min = downtime_min + minor_stop_min + setup_min
-        run_time_min   = self.planned_shift_min - total_loss_min - planned_stop_min
+        # planned_shift_min is already net of scheduled breaks (e.g. 480 - 30 = 450),
+        # so BREAK events must not be subtracted a second time.
+        # Six Big Losses (Nakajima): breakdowns and setups are availability
+        # losses; minor stops and reduced speed are performance losses, so they
+        # stay inside run time and show up as fewer parts than the ideal rate.
+        total_loss_min = downtime_min + setup_min
+        run_time_min   = self.planned_shift_min - total_loss_min
         run_time_min   = max(run_time_min, 0.0)
 
         # Part counts
@@ -153,7 +158,7 @@ class OEECalculator:
         parts_scrap  = group.loc[prod_mask, "parts_scrap"].sum()
 
         # OEE components
-        planned_net = self.planned_shift_min - planned_stop_min
+        planned_net = self.planned_shift_min
         availability = run_time_min / planned_net if planned_net > 0 else 0.0
         availability = min(availability, 1.0)
 
@@ -290,7 +295,8 @@ if __name__ == "__main__":
 
     calc = OEECalculator(
         df,
-        planned_shift_min=prod.get("planned_shift_hours", 8) * 60 - 30,
+        planned_shift_min=prod.get("planned_shift_hours", 8) * 60
+        - prod.get("breaks_per_shift", 2) * prod.get("break_duration_min", 15),
         ideal_cycle_time_sec=prod.get("ideal_cycle_time_sec", 45),
     )
     calc.print_report()

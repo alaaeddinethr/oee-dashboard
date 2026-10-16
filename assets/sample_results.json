@@ -1,0 +1,18 @@
+{
+  "shifts": 60,
+  "oee": 0.797,
+  "availability": 0.882,
+  "performance": 0.981,
+  "quality": 0.922,
+  "mtbf_min": 302.0,
+  "mttr_min": 23.9,
+  "scrap_rate": 0.078,
+  "loss_share": {
+    "Equipment Failure": 0.416,
+    "Process Defects": 0.314,
+    "Setup & Adjustment": 0.122,
+    "Idling & Minor Stops": 0.118,
+    "Reduced Speed": 0.03,
+    "Reduced Yield": 0.0
+  }
+}
